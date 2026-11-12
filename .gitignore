@@ -1,0 +1,49 @@
+# ===== 运行数据（含真实账号、报账、药品、测试数据，绝对不能提交）=====
+data/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite3
+admin-password.txt
+
+# ===== 密钥与凭据 =====
+*.pem
+*.key
+*.p12
+.env
+.env.*
+
+# ===== 临时/缓存 =====
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+node_modules/
+dist/
+.demo/
+
+# ===== 大文件素材（视频、图片源文件，仓库里不放）=====
+docs/video/
+docs/centrifuge/
+docs/oven/
+docs/icon-src/
+*.mp4
+*.mov
+*.avi
+*.zip
+
+# ===== 编辑器/系统 =====
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== 调试残留 =====
+docs/_*.py
+docs/_*.js
+docs/_*.png
+docs/_*.json
+
+# 本地保留的含真实信息副本
+*.local

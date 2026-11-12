@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>battery技术</title>
+<meta name="description" content="通道 · 电池 · 位次留痕">
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192">
+<link rel="icon" href="/icon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="battery技术">
+<link rel="stylesheet" href="/style.css?v=56">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">⚡</div>
+    <div class="brand-text">
+      <h1 id="appName">battery技术</h1>
+      <p class="sub">通道 · 电池 · 位次留痕</p>
+    </div>
+  </div>
+  <div class="stats" id="stats"></div>
+  <div class="topbar-actions">
+    <button class="btn ghost" id="btnRefresh" title="重新加载数据">刷新</button>
+    <div class="ubox" id="ubox">
+      <button class="btn ghost ubtn" id="btnUser" title="账号">
+        <span class="uavatar" id="uAvatar">·</span><span class="uname" id="uName">…</span>
+      </button>
+      <div class="umenu hidden" id="umenu">
+        <div class="umenu-head">
+          <b id="uDisplay">—</b>
+          <span id="uRole" class="urole"></span>
+        </div>
+        <button data-act="password">修改密码</button>
+        <button data-act="actas" class="admin-only">查看他人数据</button>
+        <button data-act="users" class="admin-only">用户管理</button>
+        <button data-act="logout" class="danger">退出登录</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="acting-bar hidden" id="actingBar">
+  <span>正在以 <b id="actingName">—</b> 的身份查看数据，这里的改动会写进对方的台账</span>
+  <button class="btn tiny" id="btnExitActing">退出查看</button>
+</div>
+
+<nav class="tabs" id="tabs">
+  <button data-tab="board" class="active">通道看板</button>
+  <button data-tab="report">状态报送</button>
+  <button data-tab="battery">电池档案</button>
+  <button data-tab="compare">留痕对比</button>
+  <button data-tab="methods">实验方法</button>
+  <button data-tab="tests" hidden>充放电</button>
+  <button data-tab="expenses" id="tabExpenses" hidden>实验室管理</button>
+  <button data-tab="settings">设置</button>
+</nav>
+
+<main>
+
+  <!-- ============ 通道看板 ============ -->
+  <section id="panel-board" class="panel active">
+    <div class="toolbar">
+      <input id="boardSearch" class="input search" placeholder="搜索通道编号 / 电池编号…">
+      <div class="seg" id="boardFilter">
+        <button data-f="all" class="active">全部</button>
+        <button data-f="busy">已装电池</button>
+        <button data-f="empty">空通道</button>
+      </div>
+      <div class="spacer"></div>
+      <span class="hint" id="dragHint"></span>
+      <div class="seg seg-mini" id="densitySeg" title="卡片密度">
+        <button data-d="normal">标准</button>
+        <button data-d="dense">紧凑</button>
+      </div>
+      <button class="btn" id="btnAddGroup">＋ 分组</button>
+      <button class="btn" id="btnAddChannel">＋ 通道</button>
+    </div>
+    <div id="boardGrid" class="board"></div>
+    <div id="boardEmpty" class="empty hidden">
+      <div class="empty-icon">⚡</div>
+      <p>还没有任何通道</p>
+      <p class="muted">点右上角「添加通道」，支持批量输入，例如 <code>C01-C16</code></p>
+    </div>
+  </section>
+
+  <!-- ============ 状态报送 ============ -->
+  <section id="panel-report" class="panel">
+    <div class="split">
+      <div class="card-block">
+        <div class="block-head">
+          <h2>登记一次通道状态</h2>
+          <span class="hint">记录当时的实际情况，自动关联通道上当前的电池</span>
+        </div>
+        <div class="form-row">
+          <label>选择通道</label>
+          <select id="reportChannel" class="input"></select>
+        </div>
+        <div class="battery-banner" id="reportBattery"></div>
+        <div class="form-grid" id="reportFields"></div>
+        <div class="form-row">
+          <label>状态</label>
+          <select id="reportStatus" class="input" title="装了电池自动记为运行中，卸下自动记为停机"></select>
+          <div class="hint-line">由装机情况自动判定，装电池即运行中</div>
+        </div>
+        <div class="form-row">
+          <label>记录时间</label>
+          <input type="datetime-local" id="reportTime" class="input">
+        </div>
+        <div class="form-row">
+          <label>备注</label>
+          <textarea id="reportNote" class="input" rows="2" placeholder="异常现象、操作说明等"></textarea>
+        </div>
+        <div class="form-actions">
+          <button class="btn primary lg" id="btnSubmitReport">保存这条记录</button>
+          <span class="hint" id="reportHint"></span>
+        </div>
+      </div>
+
+      <div class="card-block">
+        <div class="block-head">
+          <h2>最近报送</h2>
+          <span class="hint">最新 20 条</span>
+        </div>
+        <div id="recentList" class="recent-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 电池档案 ============ -->
+  <section id="panel-battery" class="panel">
+    <div class="toolbar">
+      <input id="batterySearch" class="input search" placeholder="输入电池编号 / 批次 / 型号搜索…">
+      <button class="btn" id="btnSearchBattery">搜索</button>
+      <div class="spacer"></div>
+      <button class="btn" id="btnNewBattery">＋ 登记电池</button>
+    </div>
+    <div class="split">
+      <div class="card-block list-block">
+        <div id="batteryList" class="battery-list"></div>
+      </div>
+      <div class="card-block" id="batteryProfile">
+        <div class="empty small"><p>← 选择左边的电池查看档案</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 留痕对比 ============ -->
+  <section id="panel-compare" class="panel">
+    <div class="toolbar wrap">
+      <select id="cmpBatch" class="input"><option value="">全部批次</option></select>
+      <select id="cmpChannel" class="input"><option value="">全部通道</option></select>
+      <select id="cmpStatus" class="input"><option value="">全部状态</option></select>
+      <input type="date" id="cmpFrom" class="input">
+      <span class="muted">至</span>
+      <input type="date" id="cmpTo" class="input">
+      <button class="btn" id="btnCmpQuery">查询</button>
+      <div class="spacer"></div>
+      <button class="btn" id="btnExportSnap">导出报送 CSV</button>
+      <button class="btn" id="btnExportPlace">导出装机 CSV</button>
+    </div>
+
+    <h2 class="section-title">同批次横向对比 <span class="hint">每颗电池的最新一次报送</span></h2>
+    <div class="table-wrap"><table class="table" id="cmpTable"></table></div>
+
+    <h2 class="section-title">报送明细 <span class="hint" id="cmpCount"></span></h2>
+    <div class="table-wrap"><table class="table" id="snapTable"></table></div>
+  </section>
+
+  <!-- ============ 实验方法 ============ -->
+  <section id="panel-methods" class="panel">
+    <div class="mt-wrap">
+      <aside class="mt-side">
+        <div class="mt-tools">
+          <input id="mtSearch" type="search" placeholder="搜索标题 / 关键词" autocomplete="off">
+          <div class="mt-tools-row">
+            <select id="mtCategory"><option value="">全部分类</option></select>
+            <button class="btn" id="mtNew">＋ 新建</button>
+            <button class="btn" id="mtNewGroup" title="新增分组">＋ 分组</button>
+          </div>
+        </div>
+        <div class="mt-list" id="mtList"></div>
+      </aside>
+      <div class="mt-main" id="mtDetail">
+        <div class="mt-blank">
+          <div class="mt-blank-icon">📘</div>
+          <p>从左侧选择一个方法查看</p>
+          <p class="muted">这里放实验方法、操作步骤、参数设置和经验总结，供后来的人参考</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 充放电数据 ============ -->
+  <section id="panel-tests" class="panel">
+    <div class="mt-wrap">
+      <aside class="mt-side">
+        <div class="mt-tools">
+          <button class="btn" id="tsUpload" style="width:100%">＋ 上传 .ndax</button>
+          <input type="file" id="tsFile" accept=".ndax" hidden>
+          <div class="hint-line" style="margin-top:7px;text-align:center">新威 BTS 导出的 .ndax 文件</div>
+        </div>
+        <div class="mt-list" id="tsList"></div>
+      </aside>
+      <div class="mt-main" id="tsDetail">
+        <div class="mt-blank">
+          <div class="mt-blank-icon">📈</div>
+          <p>上传新威导出的 .ndax 文件</p>
+          <p class="muted">自动解析充放电曲线、循环容量和库伦效率，并按通道编号匹配</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 设置 ============ -->
+  <section id="panel-settings" class="panel">
+    <div class="settings-grid">
+
+      <div class="card-block">
+        <div class="block-head"><h2>已归档通道</h2></div>
+        <p class="hint">在看板上删除「已有历史数据」的通道时，不会真删，而是归档到这里；数据保留，点「恢复」即可回到看板。</p>
+        <div id="channelAdmin" class="admin-list"></div>
+      </div>
+
+      <div class="card-block">
+        <div class="block-head">
+          <h2>状态字段</h2>
+          <span class="hint">这里决定“报送”页出现哪些输入框</span>
+        </div>
+        <div class="form-row inline">
+          <input id="nfLabel" class="input" placeholder="字段名，如 电压">
+          <input id="nfUnit" class="input sm" placeholder="单位">
+          <select id="nfKind" class="input sm">
+            <option value="number">数值</option>
+            <option value="text">文本</option>
+            <option value="select">选项</option>
+          </select>
+          <button class="btn primary" id="btnAddField">添加</button>
+        </div>
+        <div id="fieldAdmin" class="admin-list"></div>
+      </div>
+
+      <div class="card-block">
+        <div class="block-head"><h2>状态选项</h2></div>
+        <p class="hint">用逗号分隔，用于“状态”下拉框和看板颜色</p>
+        <div class="form-row inline">
+          <input id="statusOptions" class="input" placeholder="运行中, 静置, 异常, 停机">
+          <button class="btn primary" id="btnSaveStatus">保存</button>
+        </div>
+        <div id="statusPreview" class="chip-row"></div>
+      </div>
+
+      <div class="card-block">
+        <div class="block-head"><h2>数据与备份</h2></div>
+        <p class="hint">全部数据保存在单个 SQLite 文件里，直接复制这个文件就是完整备份。</p>
+        <div class="code-line" id="dbPath"></div>
+        <div class="form-row inline">
+          <button class="btn" id="btnExpSnap2">导出报送 CSV</button>
+          <button class="btn" id="btnExpPlace2">导出装机 CSV</button>
+        </div>
+        <div class="block-head" style="margin-top:18px"><h2>危险操作</h2></div>
+        <p class="hint">清空后通道、电池、装机、报送记录全部删除，字段和设置保留。清空前请先导出 CSV 备份。</p>
+        <div class="form-row inline">
+          <button class="btn danger" id="btnReset">清空全部数据，从零开始</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ 组内报账（内测/管理员） ============ -->
+  <section id="panel-expenses" class="panel">
+    <div class="sub-tabs" id="expSubTabs">
+      <button data-sub="exp" class="active">报账</button>
+      <button data-sub="drug">药品</button>
+    </div>
+
+    <div id="subExp">
+      <div class="toolbar">
+        <input id="expSearch" class="input search" placeholder="搜索物品 / 录入人…">
+        <input id="expMonth" class="input" type="month" title="按月份筛选（留空看全部）" style="width:150px">
+        <select id="expScope" class="input" style="width:120px" title="显示哪些记录">
+          <option value="pending">待报销</option>
+          <option value="all">全部</option>
+        </select>
+        <div class="spacer"></div>
+        <button class="btn" id="expExport">导出 Excel</button>
+        <button class="btn" id="expExportZip">选择下载</button>
+        <button class="btn" id="expInvoice">开票信息</button>
+        <button class="btn primary" id="expNew">＋ 记一笔</button>
+      </div>
+      <div id="expList"></div>
+    </div>
+
+    <div id="subDrug" hidden>
+      <div class="toolbar">
+        <input id="drugSearch" class="input search" placeholder="搜索药品 / 厂家 / 纯度…">
+        <select id="drugCat" class="input" style="width:150px">
+          <option value="">全部类别</option>
+          <option value="固体">固体</option>
+          <option value="液体">液体</option>
+          <option value="手套箱固体">手套箱固体</option>
+          <option value="手套箱液体">手套箱液体</option>
+        </select>
+        <div class="spacer"></div>
+        <a class="btn" id="drugBuy" href="http://wzcg.swpu.edu.cn/" target="_blank" rel="noopener"
+           title="打开学校试剂耗材采购平台">去采购平台 ↗</a>
+        <button class="btn primary" id="drugNew">＋ 药品登记</button>
+      </div>
+      <div id="drugList"></div>
+    </div>
+  </section>
+
+</main>
+
+<div id="toast" class="toast"></div>
+
+<div id="modal" class="backdrop hidden">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle"></h3>
+      <button class="icon-btn" id="modalClose">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot" id="modalFoot"></div>
+  </div>
+</div>
+
+<datalist id="batteryCodes"></datalist>
+
+<script src="/app.js?v=56"></script>
+<script>
+// 注册 Service Worker：让页面能「安装」成独立窗口的 App（PWA）
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('/sw.js').catch(function () { /* 注册失败不影响正常使用 */ });
+  });
+}
+</script>
+</body>
+</html>

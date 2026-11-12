@@ -1,0 +1,39 @@
+[Unit]
+Description=Battery Tracker - 电池通道监管台账
+Documentation=file:///opt/battery-tracker/DEPLOY.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=battery
+Group=battery
+WorkingDirectory=/opt/battery-tracker
+
+Environment=BT_HOST=127.0.0.1
+Environment=BT_PORT=8787
+Environment=BT_SECURE=1
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=TZ=Asia/Shanghai
+
+ExecStart=/usr/bin/python3 /opt/battery-tracker/server.py
+
+Restart=always
+RestartSec=3
+# 反复起不来就别死循环，交给 systemd 报错
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+# 收敛权限：只允许写 data 目录
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/battery-tracker/data
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
