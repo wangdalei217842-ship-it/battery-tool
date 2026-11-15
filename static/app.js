@@ -340,9 +340,7 @@
           '<button class="dense-up" data-act="uploadNdax" title="上传 .ndax 数据">📤</button>' +
           '<button class="card-del" data-act="delChannel" title="删除这个通道">✕</button>' +
         "</div>" +
-        '<div class="dense-bat">' +
-          (b ? '<span class="bat-name" data-act="editBattery" data-bid="' + (b.id || "") + '">' +
-                esc(b.code) + "</span>" : "空通道") + "</div>" +
+        '<div class="dense-bat">' + (b ? esc(b.code) : "空通道") + "</div>" +
         (metrics ? '<div class="dense-metrics">' + metrics + "</div>" : "") +
       "</div>"
     );
@@ -397,8 +395,7 @@
           delBtn() +
         "</div>" +
         '<div class="bat-block">' +
-          '<div class="bat-code"><span class="bat-name" data-act="editBattery" data-bid="' +
-            (b.id || "") + '" title="点击修改电池信息">' + esc(b.code || "?") + "</span></div>" +
+          '<div class="bat-code">' + esc(b.code || "?") + "</div>" +
           (meta ? '<div class="bat-meta">' + esc(meta) + "</div>" : "") +
         "</div>" +
         metrics +
@@ -416,52 +413,6 @@
     );
   }
 
-
-  async function batteryEditor(bid) {
-    if (!bid) { toast("没找到电池信息", "err"); return; }
-    let b;
-    try {
-      // 这个接口直接返回电池对象本身（不是 {battery: {...}}）
-      b = await api("/api/batteries/" + bid);
-    } catch (e) { return toast(e.message, "err"); }
-    if (!b || !b.id) return toast("没找到这块电池", "err");
-
-    openModal({
-      title: "修改电池信息",
-      body:
-        '<div class="form-row"><label>电池编号</label>' +
-          '<input id="btCode" class="input" value="' + esc(b.code || "") + '" placeholder="例如 3-MGA-01">' +
-          '<div class="hint-line">改编号不影响历史装机记录</div></div>' +
-        '<div class="form-row"><label>批次</label><input id="btBatch" class="input" value="' + esc(b.batch || "") + '"></div>' +
-        '<div class="form-row"><label>型号</label><input id="btModel" class="input" value="' + esc(b.model || "") + '"></div>' +
-        '<div class="form-row"><label>额定容量（Ah）</label><input id="btCap" class="input" type="number" step="0.001" value="' +
-          (b.rated_capacity != null ? b.rated_capacity : "") + '"></div>' +
-        '<div class="form-row"><label>备注</label><input id="btNote" class="input" value="' + esc(b.note || "") + '"></div>',
-      foot: '<button class="btn ghost" data-close>取消</button><button class="btn primary" id="btSave">保存</button>',
-      onOpen: () => {
-        $("#modalFoot [data-close]").onclick = closeModal;
-        $("#btCode").focus();
-        $("#btCode").select();
-        $("#btSave").onclick = async () => {
-          const code = $("#btCode").value.trim();
-          if (!code) { toast("电池编号不能为空", "err"); return; }
-          $("#btSave").disabled = true;
-          try {
-            const cap = $("#btCap").value;
-            await api("/api/batteries/" + bid, { method: "PUT", body: {
-              code: code,
-              batch: $("#btBatch").value.trim(),
-              model: $("#btModel").value.trim(),
-              rated_capacity: cap === "" ? null : Number(cap),
-              note: $("#btNote").value.trim() } });
-            closeModal();
-            await loadState();
-            toast("已更新", "ok");
-          } catch (e) { toast(e.message, "err"); $("#btSave").disabled = false; }
-        };
-      },
-    });
-  }
 
   /* ----------------------------------------------------------
      看板上的就地改名
@@ -1160,12 +1111,13 @@
         '<div class="cp-block">' +
           '<div class="cp-title">电池</div>' +
           (cur
-            ? '<div class="cp-bat"><b>' + esc(b.code || "?") + "</b>" +
+            ? '<div class="cp-bat"><b id="cpBatName"' +
+              (b && b.id ? ' class="cp-editable" title="点一下改名字"' : "") + ">" +
+              esc(b.code || "?") + "</b>" +
               '<span class="badge">已装 ' + esc(durText(cur.started_at)) + "</span></div>"
             : '<div class="cp-empty">还没装电池</div>') +
           '<div class="cp-btns">' +
             '<button class="btn" id="cpSwap">' + (cur ? "换电池" : "装电池") + "</button>" +
-            (b && b.id ? '<button class="btn" id="cpRenameBat">改电池名</button>' : "") +
           "</div>" +
         "</div>" +
         '<div class="cp-block">' +
@@ -1186,8 +1138,51 @@
         $("#modalFoot [data-close]").onclick = closeModal;
 
         $("#cpSwap").onclick = () => { closeModal(); openSwap(cid); };
-        const rb = $("#cpRenameBat");
-        if (rb) rb.onclick = () => { closeModal(); batteryEditor(b.id); };
+
+        const nameEl = $("#cpBatName");
+        if (nameEl && b && b.id) {
+          nameEl.onclick = () => {
+            if (nameEl.dataset.editing === "1") return;
+            nameEl.dataset.editing = "1";
+            const old = nameEl.textContent;
+            const inp = document.createElement("input");
+            inp.className = "input cp-name-input";
+            inp.value = old;
+            nameEl.replaceWith(inp);
+            inp.focus();
+            inp.select();
+
+            let done = false;
+            const restore = () => {
+              if (done) return;
+              done = true;
+              inp.replaceWith(nameEl);
+              delete nameEl.dataset.editing;
+            };
+            const save = async () => {
+              if (done) return;
+              const v = inp.value.trim();
+              if (!v || v === old) { restore(); return; }
+              done = true;
+              try {
+                await api("/api/batteries/" + b.id, { method: "PUT", body: { code: v } });
+                toast("已改名", "ok");
+                await loadState();
+                closeModal();
+                openChannelPanel(cid);
+              } catch (e) {
+                done = false;
+                toast(e.message, "err");
+                inp.focus();
+              }
+            };
+            inp.onblur = save;
+            inp.onkeydown = (ev) => {
+              if (ev.key === "Enter") { ev.preventDefault(); inp.blur(); }
+              if (ev.key === "Escape") { ev.preventDefault(); done = true; restore(); }
+            };
+          };
+        }
 
         $("#cpSubmit").onclick = async () => {
           const values = {};
@@ -1768,12 +1763,6 @@
       if (act) {
         if (act.dataset.act === "delChannel") { e.preventDefault(); deleteChannel(cid); return; }
         if (act.dataset.act === "swap") { openSwap(cid); return; }
-        if (act.dataset.act === "editBattery") {
-          e.preventDefault();
-          e.stopPropagation();
-          batteryEditor(Number(act.dataset.bid));
-          return;
-        }
         if (act.dataset.act === "openTest") {
           e.preventDefault();
           e.stopPropagation();

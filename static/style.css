@@ -1610,17 +1610,18 @@ select.input { cursor: pointer; }
 }
 .reim-mark[title="已报销"] { color: #16a34a; font-weight: 700; }
 
-/* 电池编号可点改名 */
-.bat-name {
-  cursor: pointer;
-  border-bottom: 1px dashed transparent;
-}
-.bat-name:hover {
-  border-bottom-color: var(--accent, #2563eb);
-  color: var(--accent, #2563eb);
+/* 面板里的电池名：点一下原地改名（无下划线，仅悬停变色） */
+.cp-editable { cursor: pointer; }
+.cp-editable:hover { color: var(--accent, #2563eb); }
+.cp-name-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 4px 8px;
 }
 @media (max-width: 640px) {
-  .bat-name { border-bottom-color: var(--line); }
+  .cp-editable { color: var(--accent, #2563eb); }
 }
 
 /* 通道面板（报送+改名+换电池合一） */
