@@ -67,7 +67,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_channel_group_code
 
 CREATE TABLE IF NOT EXISTS batteries (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT NOT NULL UNIQUE,
+    code TEXT NOT NULL,
     batch TEXT DEFAULT '',
     model TEXT DEFAULT '',
     rated_capacity REAL,
@@ -488,8 +488,16 @@ def create_channels_bulk(conn, codes, group_id=None):
 # ---------------------------------------------------------------- batteries
 
 def battery_by_code(conn, code):
-    row = conn.execute("SELECT * FROM batteries WHERE code=?", ((code or "").strip(),)).fetchone()
+    """编号允许重复（换下的旧电池仍占着编号）。取最近创建的那块。"""
+    row = conn.execute(
+        "SELECT * FROM batteries WHERE code=? ORDER BY id DESC LIMIT 1",
+        ((code or "").strip(),)).fetchone()
     return dict(row) if row else None
+
+
+def batteries_by_code(conn, code):
+    return [dict(r) for r in conn.execute(
+        "SELECT * FROM batteries WHERE code=? ORDER BY id DESC", ((code or "").strip(),))]
 
 
 def battery_by_id(conn, bid):
@@ -501,7 +509,15 @@ def ensure_battery(conn, code, batch="", model="", rated_capacity=None, note="")
     code = (code or "").strip()
     if not code:
         raise ValueError("电池编号不能为空")
-    exist = battery_by_code(conn, code)
+    # 同编号可能有多块：优先复用还没装在通道上的那块
+    exist = None
+    for cand in batteries_by_code(conn, code):
+        busy = conn.execute(
+            "SELECT 1 FROM placements WHERE battery_id=? AND ended_at IS NULL LIMIT 1",
+            (cand["id"],)).fetchone()
+        if not busy:
+            exist = cand
+            break
     if exist:
         # 只补空字段，不覆盖已有信息
         updates = {}
@@ -528,10 +544,7 @@ def update_battery(conn, bid, code=None, batch=None, model=None, rated_capacity=
     new_code = (code if code is not None else b["code"] or "").strip()
     if not new_code:
         raise ValueError("电池编号不能为空")
-    if new_code != b["code"]:
-        exist = battery_by_code(conn, new_code)
-        if exist and exist["id"] != bid:
-            raise ValueError("电池编号 %s 已被占用" % new_code)
+    # 编号允许重复（旧电池仍占着名字），这里不再拦
     conn.execute(
         "UPDATE batteries SET code=?, batch=?, model=?, rated_capacity=?, note=? WHERE id=?",
         (new_code,
