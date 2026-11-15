@@ -52,6 +52,8 @@
 | 运行用户 | `battery`（systemd 服务名 `battery-tracker`） |
 | 域名 | `https://<YOUR_DOMAIN>`（Let's Encrypt，自动续期） |
 | 数据目录 | `/opt/battery-tracker/data`（**不在 git 里**） |
+| 拉代码方式 | **只能走 SSH**（HTTPS 到 github.com 被阻断，实测 443 超时） |
+| 服务器部署密钥 | `/opt/battery-tracker/.ssh/github_deploy`（已在仓库 Deploy keys 里，`.gitignore` 已排除该目录） |
 | 备份目录 | `/opt/backups/`、`/opt/battery-tracker/data/backups/` |
 
 **SSH 登录命令**：
@@ -194,7 +196,19 @@ du -sh /opt/battery-tracker/data/
 **原因**：`index.html` 里 `app.js?v=56` 没改，浏览器用缓存。
 **解法**：改 `app.js` 时把 `index.html` 和 `sw.js` 的版本号一起 +1，三处要一致。
 
-### ② 服务器 git 报 dubious ownership
+### ② 服务器拉代码报 TLS 错误
+
+**现象**：`GnuTLS recv error (-110): The TLS connection was non-properly terminated`
+**根因**：服务器的 **443 到 github.com 被阻断**（`curl https://github.com` 超时，code=000），但 **22 端口是通的**。
+**解法**：remote 必须用 SSH：
+
+```bash
+sudo -u battery git remote set-url origin git@github.com:wangdalei217842-ship-it/battery-tool.git
+```
+
+**不要**改回 HTTPS，改了必然失败，别在这上面浪费时间。
+
+### ③ 服务器 git 报 dubious ownership
 
 **现象**：`fatal: detected dubious ownership in repository at '/opt/battery-tracker'`
 **原因**：目录属于 `battery` 用户，但用 `root` 执行 git。
@@ -204,27 +218,27 @@ du -sh /opt/battery-tracker/data/
 git config --global --add safe.directory /opt/battery-tracker
 ```
 
-### ③ 登录后跳回登录页 / 一直转圈
+### ④ 登录后跳回登录页 / 一直转圈
 
 **根因**：302 响应缺 `Content-Length: 0`，HTTP/1.1 长连接下浏览器会一直等 body 直到超时（60 秒）。
 **已修复**，但如果以后新增 302 跳转，**必须带 `Content-Length: 0`**。
 
-### ④ 手机上打不开曲线
+### ⑤ 手机上打不开曲线
 
 **原因**：卡片有两套模板（`cardHtmlDense` 紧凑版 / `cardHtmlNormal` 普通版），加按钮要**两处都加**。
 **已修复**，新增卡片按钮时注意。
 
-### ⑤ 通道编号"重复"
+### ⑥ 通道编号"重复"
 
 **设计**：编号只在**同一分组内**唯一，跨分组可以都用 `2-1`。
 **注意**：`ux_channel_group_code` 是 `(COALESCE(group_id,0), code)` 组合唯一索引。
 
-### ⑥ `store.add_snapshot()` 写完没生效
+### ⑦ `store.add_snapshot()` 写完没生效
 
 **原因**：这个函数**不 commit**，靠调用方提交。
 **解法**：调用后必须 `conn.commit()`。
 
-### ⑦ 同名 id 冲突
+### ⑧ 同名 id 冲突
 
 **现象**：弹窗内容渲染到看不见的地方。
 **原因**：页面上和弹窗里有同名 `id`，`document.querySelector` 抓到第一个。
