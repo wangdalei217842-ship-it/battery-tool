@@ -421,10 +421,10 @@
     if (!bid) { toast("没找到电池信息", "err"); return; }
     let b;
     try {
-      const r = await api("/api/batteries/" + bid);
-      b = r.battery;
+      // 这个接口直接返回电池对象本身（不是 {battery: {...}}）
+      b = await api("/api/batteries/" + bid);
     } catch (e) { return toast(e.message, "err"); }
-    if (!b) return;
+    if (!b || !b.id) return toast("没找到这块电池", "err");
 
     openModal({
       title: "修改电池信息",
