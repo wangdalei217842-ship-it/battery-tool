@@ -197,7 +197,9 @@ def list_fields(conn, only_active=False):
     if only_active:
         sql += " WHERE active=1"
     sql += " ORDER BY sort_order, id"
-    return [dict(r) for r in conn.execute(sql)]
+    rows = [dict(r) for r in conn.execute(sql)]
+    rows.sort(key=lambda r: _channel_sort_key(r.get("code")))
+    return rows
 
 
 def field_by_key(conn, key):
@@ -357,12 +359,26 @@ def reorder_channels(conn, payload):
 
 # ---------------------------------------------------------------- channels
 
+def _channel_sort_key(code):
+    """按「排-号」自然排序：2-5 在 3-1 前面，纯数字按数值。"""
+    import re
+    m = re.match(r"^\s*(\d+)\s*-\s*(\d+)", str(code or ""))
+    if m:
+        return (int(m.group(1)), int(m.group(2)), 0, str(code))
+    m2 = re.match(r"^\s*(\d+)\s*$", str(code or ""))
+    if m2:
+        return (int(m2.group(1)), 0, 0, str(code))
+    return (999999, 0, 1, str(code))
+
+
 def list_channels(conn, include_archived=False):
     sql = "SELECT * FROM channels"
     if not include_archived:
         sql += " WHERE archived=0"
     sql += " ORDER BY sort_order, id"
-    return [dict(r) for r in conn.execute(sql)]
+    rows = [dict(r) for r in conn.execute(sql)]
+    rows.sort(key=lambda r: _channel_sort_key(r.get("code")))
+    return rows
 
 
 def channel_by_id(conn, cid):

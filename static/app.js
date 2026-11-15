@@ -317,7 +317,8 @@
   function cardHtmlDense(c) {
     const cur = c.current;
     const last = c.last;
-    const st = last ? last.status : "";
+    // 状态只看当前是否装着电池，避免换下的电池还显示"运行中"
+    const st = c.current ? "运行中" : "停机";
     const cls = statusClass(st);
     const b = cur ? (cur.battery || {}) : null;
     const dragAttr = ' data-group="' + (c.group_id || 0) + '"';
@@ -344,7 +345,8 @@
   function cardHtmlNormal(c) {
     const cur = c.current;
     const last = c.last;
-    const st = last ? last.status : "";
+    // 状态只看当前是否装着电池，避免换下的电池还显示"运行中"
+    const st = c.current ? "运行中" : "停机";
     const cls = statusClass(st);
     const drag = ' data-group="' + (c.group_id || 0) + '"';
 
