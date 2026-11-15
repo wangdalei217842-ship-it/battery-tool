@@ -1609,3 +1609,16 @@ select.input { cursor: pointer; }
   font-size: 13px;
 }
 .reim-mark[title="已报销"] { color: #16a34a; font-weight: 700; }
+
+/* 电池编号可点改名 */
+.bat-name {
+  cursor: pointer;
+  border-bottom: 1px dashed transparent;
+}
+.bat-name:hover {
+  border-bottom-color: var(--accent, #2563eb);
+  color: var(--accent, #2563eb);
+}
+@media (max-width: 640px) {
+  .bat-name { border-bottom-color: var(--line); }
+}

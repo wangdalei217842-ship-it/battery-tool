@@ -352,6 +352,23 @@ def api_battery_create(h, m, body):
     return {"battery": b, "existed": existed}
 
 
+@route("PUT", r"/api/batteries/(\d+)")
+def api_battery_update(h, m, body):
+    conn = h.conn
+    bid = int(m.group(1))
+    try:
+        b = store.update_battery(
+            conn, bid,
+            code=body.get("code") if "code" in body else None,
+            batch=body.get("batch") if "batch" in body else None,
+            model=body.get("model") if "model" in body else None,
+            rated_capacity=body.get("rated_capacity") if "rated_capacity" in body else None,
+            note=body.get("note") if "note" in body else None)
+    except ValueError as exc:
+        raise ApiError(str(exc), 400)
+    return {"ok": True, "battery": b}
+
+
 @route("GET", r"/api/batteries/(\d+)")
 def api_battery_profile(h, m, body):
     return store.battery_profile(h.conn, int(m.group(1)))

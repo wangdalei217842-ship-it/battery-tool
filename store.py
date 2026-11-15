@@ -504,6 +504,30 @@ def ensure_battery(conn, code, batch="", model="", rated_capacity=None, note="")
     return battery_by_id(conn, cur.lastrowid), False
 
 
+def update_battery(conn, bid, code=None, batch=None, model=None, rated_capacity=None, note=None):
+    """改电池信息（主要是编号写错时纠正）。历史装机记录靠 id 关联，改名不影响。"""
+    b = battery_by_id(conn, bid)
+    if not b:
+        raise ValueError("电池不存在")
+    new_code = (code if code is not None else b["code"] or "").strip()
+    if not new_code:
+        raise ValueError("电池编号不能为空")
+    if new_code != b["code"]:
+        exist = battery_by_code(conn, new_code)
+        if exist and exist["id"] != bid:
+            raise ValueError("电池编号 %s 已被占用" % new_code)
+    conn.execute(
+        "UPDATE batteries SET code=?, batch=?, model=?, rated_capacity=?, note=? WHERE id=?",
+        (new_code,
+         batch if batch is not None else b["batch"],
+         model if model is not None else b["model"],
+         rated_capacity if rated_capacity is not None else b["rated_capacity"],
+         note if note is not None else b["note"],
+         bid))
+    conn.commit()
+    return battery_by_id(conn, bid)
+
+
 def search_batteries(conn, q="", limit=100):
     q = (q or "").strip()
     if q:
