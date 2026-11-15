@@ -1686,6 +1686,9 @@ select.input { cursor: pointer; }
   textarea {
     font-size: 16px;
   }
-  /* 面板里原地改电池名的输入框 */
+  /* 面板/表单里的输入框（这些选择器更具体，必须单列，否则被 14px 覆盖） */
+  .form-row input,
+  .form-row select,
+  .form-row textarea,
   .cp-name-input { font-size: 16px; }
 }
