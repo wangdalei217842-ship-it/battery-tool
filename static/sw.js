@@ -7,12 +7,12 @@
  *
  * 发版时把下面的 VERSION 改一下，旧缓存会自动清掉。
  */
-const VERSION = 'bt-v58';
+const VERSION = 'bt-v59';
 const SHELL = [
   '/',
   '/index.html',
-  '/app.js?v=58',
-  '/style.css?v=58',
+  '/app.js?v=59',
+  '/style.css?v=59',
   '/manifest.webmanifest',
   '/icon-192.png',
   '/icon-512.png'

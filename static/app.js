@@ -1126,6 +1126,106 @@
      换电池 / 装电池 / 下机
      ============================================================ */
 
+
+  /* 通道面板：手机上一个弹窗搞定报送、改名、换电池 */
+  function openChannelPanel(cid) {
+    const ch = channelById(cid);
+    if (!ch) return;
+    const cur = ch.current;
+    const b = cur ? (cur.battery || {}) : null;
+    const fields = ((S.data && S.data.fields) || []).filter((f) => f.active);
+    const autoStatus = cur ? "运行中" : "停机";
+
+    const fieldHtml = fields.map((f) => {
+      const id = "cpf_" + f.key;
+      let input;
+      if (f.kind === "select") {
+        const opts = (f.options || "").split(/[,，]/).filter(Boolean);
+        input = '<select id="' + id + '" class="input"><option value=""></option>' +
+          opts.map((o) => '<option value="' + esc(o) + '">' + esc(o) + "</option>").join("") + "</select>";
+      } else if (f.kind === "text") {
+        input = '<input id="' + id + '" class="input" placeholder="' + esc(f.unit || "") + '">';
+      } else {
+        input = '<input id="' + id + '" class="input" type="number" step="any" placeholder="' +
+          esc(f.unit || "") + '">';
+      }
+      return '<div class="form-row"><label>' + esc(f.label) +
+        (f.unit ? ' <span class="hint">(' + esc(f.unit) + ")</span>" : "") + "</label>" + input + "</div>";
+    }).join("");
+
+    openModal({
+      title: ch.code + (b && b.code ? " · " + b.code : " · 空通道"),
+      wide: true,
+      body:
+        '<div class="cp-block">' +
+          '<div class="cp-title">电池</div>' +
+          (cur
+            ? '<div class="cp-bat"><b>' + esc(b.code || "?") + "</b>" +
+              '<span class="badge">已装 ' + esc(durText(cur.started_at)) + "</span></div>"
+            : '<div class="cp-empty">还没装电池</div>') +
+          '<div class="cp-btns">' +
+            '<button class="btn" id="cpSwap">' + (cur ? "换电池" : "装电池") + "</button>" +
+            (b && b.id ? '<button class="btn" id="cpRenameBat">改电池名</button>' : "") +
+          "</div>" +
+        "</div>" +
+        '<div class="cp-block">' +
+          '<div class="cp-title">状态报送</div>' +
+          fieldHtml +
+          '<div class="form-row"><label>备注</label><input id="cpNote" class="input" placeholder="选填"></div>' +
+          '<button class="btn primary cp-wide" id="cpSubmit">提交报送（' + autoStatus + "）</button>" +
+        "</div>" +
+        '<div class="cp-block">' +
+          '<div class="cp-title">通道编号</div>' +
+          '<div class="cp-inline">' +
+            '<input id="cpCode" class="input" value="' + esc(ch.code) + '">' +
+            '<button class="btn" id="cpSaveCode">保存</button>' +
+          "</div>" +
+        "</div>",
+      foot: '<button class="btn ghost" data-close>关闭</button>',
+      onOpen: () => {
+        $("#modalFoot [data-close]").onclick = closeModal;
+
+        $("#cpSwap").onclick = () => { closeModal(); openSwap(cid); };
+        const rb = $("#cpRenameBat");
+        if (rb) rb.onclick = () => { closeModal(); batteryEditor(b.id); };
+
+        $("#cpSubmit").onclick = async () => {
+          const values = {};
+          fields.forEach((f) => {
+            const el = $("#cpf_" + f.key);
+            if (el && el.value !== "") values[f.key] = el.value;
+          });
+          const note = $("#cpNote").value.trim();
+          if (!Object.keys(values).length && !note) {
+            toast("至少填一个数值，或写点备注", "err"); return;
+          }
+          const btn = $("#cpSubmit");
+          btn.disabled = true;
+          try {
+            await api("/api/snapshots", { method: "POST", body: {
+              channel_id: cid, values: values, status: autoStatus,
+              note: note, taken_at: nowLocal(), source: "web" } });
+            toast("已报送", "ok");
+            await loadState();
+            closeModal();
+          } catch (e) { toast(e.message, "err"); btn.disabled = false; }
+        };
+
+        $("#cpSaveCode").onclick = async () => {
+          const code = $("#cpCode").value.trim();
+          if (!code) { toast("通道编号不能为空", "err"); return; }
+          if (code === ch.code) { closeModal(); return; }
+          try {
+            await api("/api/channels/" + cid, { method: "PUT", body: { code: code } });
+            toast("已改名", "ok");
+            await loadState();
+            closeModal();
+          } catch (e) { toast(e.message, "err"); }
+        };
+      },
+    });
+  }
+
   async function openSwap(channelId) {
     const ch = channelById(channelId);
     if (!ch) return;
@@ -1657,6 +1757,11 @@
       if (editEl) {
         e.preventDefault();
         startInlineEdit(editEl, cid, editEl.dataset.edit);
+        return;
+      }
+      // 点卡片空白处 → 打开通道面板（手机上最顺手）
+      if (!e.target.closest("[data-act], [data-edit], button, input, select, a, textarea")) {
+        openChannelPanel(cid);
         return;
       }
       const act = e.target.closest("[data-act]");
