@@ -39,11 +39,6 @@
     );
   }
 
-  function fmtDay(iso) {
-    const d = parseDate(iso);
-    if (!d) return "—";
-    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
-  }
 
   function durText(startIso, endIso) {
     const a = parseDate(startIso);

@@ -1672,3 +1672,20 @@ select.input { cursor: pointer; }
   .cp-btns .btn { flex: 1; }
   .cp-inline .btn { flex: none; }
 }
+
+/* iOS Safari 聚焦输入框会自动放大页面：字号必须 ≥16px 才不触发 */
+@media (max-width: 640px) {
+  .input,
+  input[type="text"],
+  input[type="number"],
+  input[type="date"],
+  input[type="month"],
+  input[type="password"],
+  input[type="search"],
+  select,
+  textarea {
+    font-size: 16px;
+  }
+  /* 面板里原地改电池名的输入框 */
+  .cp-name-input { font-size: 16px; }
+}
