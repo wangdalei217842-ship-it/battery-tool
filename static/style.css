@@ -1033,19 +1033,21 @@ select.input { cursor: pointer; }
   font-size: 13.5px; color: var(--ink-2); margin-bottom: 18px; line-height: 1.65;
 }
 
-.mt-content { font-size: 14px; line-height: 1.85; color: var(--ink-2); }
-.mt-content h2 { font-size: 16px; margin: 22px 0 10px; color: var(--ink); }
-.mt-content h3 { font-size: 14.5px; margin: 18px 0 8px; color: var(--ink); }
+.mt-content { font-size: 15.5px; line-height: 1.9; color: var(--ink-2); }
+.mt-content h2 { font-size: 18px; margin: 24px 0 12px; color: var(--ink); }
+.mt-content h3 { font-size: 16px; margin: 20px 0 9px; color: var(--ink); }
 .mt-content p { margin: 0 0 12px; }
 .mt-content ul { margin: 0 0 14px; padding-left: 22px; }
 .mt-content li { margin-bottom: 5px; }
 .mt-content code {
-  background: var(--line-2); padding: 1.5px 5px; border-radius: 4px;
-  font-size: 12.5px; font-family: ui-monospace, Consolas, monospace;
+  background: var(--line-2); padding: 2px 6px; border-radius: 4px;
+  font-size: 14px; font-family: ui-monospace, Consolas, monospace;
 }
 .mt-content pre {
-  background: #0f172a; color: #e2e8f0; padding: 13px 15px; border-radius: var(--r-sm);
-  overflow-x: auto; font-size: 12.5px; line-height: 1.6; margin: 0 0 14px;
+  background: #f6f8fb; color: #1f2937;
+  border: 1px solid var(--line); border-left: 3px solid var(--primary, #2563eb);
+  padding: 13px 15px; border-radius: var(--r-sm);
+  overflow-x: auto; font-size: 14px; line-height: 1.7; margin: 0 0 15px;
 }
 .mt-content pre code { background: none; color: inherit; padding: 0; }
 .mt-content blockquote {
@@ -1092,7 +1094,11 @@ select.input { cursor: pointer; }
   .mt-main { padding: 16px 15px; min-height: 0; }
   .mt-head h2 { font-size: 17px; }
   .mt-actions { margin-left: 0; width: 100%; }
-  .mt-content { font-size: 13.5px; }
+  .mt-content { font-size: 16px; line-height: 1.95; }
+  .mt-content h2 { font-size: 18.5px; }
+  .mt-content h3 { font-size: 16.5px; }
+  .mt-content pre { font-size: 15px; }
+  .mt-content code { font-size: 15px; }
 }
 
 /* 卡片主操作：平时描边，指针进入卡片才填色。
