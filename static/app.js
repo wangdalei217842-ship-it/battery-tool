@@ -1994,6 +1994,21 @@
         '<span class="ch-chip' + (isShared ? " shared" : "") + '"' +
         ' title="' + esc(x.machine + " · " + (x.status || "")) + '">' +
         esc(x.code) + "</span>";
+
+      // 不同设备的通道号会撞（4号机有 3-1，8号机也有 3），按设备分组才不会认错
+      const groupByMachine = (arr) => {
+        const map = {};
+        arr.forEach((x) => {
+          const k = x.machine || "未标注设备";
+          (map[k] = map[k] || []).push(x);
+        });
+        return Object.keys(map).map((k) =>
+          '<div class="mc-row">' +
+            '<span class="mc-label">' + esc(k) + "</span>" +
+            '<div class="mc-chips">' + map[k].map((x) => chip(x, arr === shared)).join("") + "</div>" +
+          "</div>").join("");
+      };
+
       box.innerHTML =
         '<div class="my-channel-card">' +
           '<div class="mc-head">' +
@@ -2004,12 +2019,12 @@
           "</div>" +
           '<div class="mc-groups">' +
             (main.length
-              ? '<div class="mc-row"><span class="mc-label">主责</span><div class="mc-chips">' +
-                main.map((x) => chip(x, false)).join("") + "</div></div>"
+              ? '<div class="mc-section"><div class="mc-section-title">主责</div>' +
+                groupByMachine(main) + "</div>"
               : "") +
             (shared.length
-              ? '<div class="mc-row"><span class="mc-label">共享</span><div class="mc-chips">' +
-                shared.map((x) => chip(x, true)).join("") + "</div></div>"
+              ? '<div class="mc-section"><div class="mc-section-title">共享</div>' +
+                groupByMachine(shared) + "</div>"
               : "") +
           "</div>" +
         "</div>";

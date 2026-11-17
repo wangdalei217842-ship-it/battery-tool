@@ -1754,3 +1754,22 @@ select.input { cursor: pointer; }
   .mc-count { margin-left: 0; width: 100%; }
   .ch-chip { font-size: 14px; padding: 3px 9px; }
 }
+
+/* 我的通道：按设备分组 */
+.mc-section { margin-bottom: 10px; }
+.mc-section:last-child { margin-bottom: 0; }
+.mc-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+  margin-bottom: 6px;
+}
+.mc-label {
+  width: auto !important;
+  max-width: 132px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-2);
+  font-size: 12px;
+}
