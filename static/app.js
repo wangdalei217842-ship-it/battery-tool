@@ -1957,16 +1957,113 @@
     });
   }
 
+
+  /* ---------------------------------------------------------- 通道分配 */
+
+  const ASG = { items: [], q: "", owner: "", loaded: false, mine: null };
+
+  async function loadAssign(force) {
+    try {
+      if (!ASG.mine) ASG.mine = await api("/api/assign/mine");
+      if (ASG.loaded && !force) { renderAssign(); return; }
+      const r = await api("/api/assign?q=" + encodeURIComponent(ASG.q) +
+        "&owner=" + encodeURIComponent(ASG.owner));
+      ASG.items = r.items || [];
+      ASG.stats = r.stats || {};
+      ASG.people = r.people || {};
+      ASG.loaded = true;
+      renderAssign();
+    } catch (e) { toast(e.message, "err"); }
+  }
+
+  function renderAssign() {
+    // 顶部：我拥有的通道
+    const box = $("#myAssign");
+    const m = ASG.mine || {};
+    if (!m.matched) {
+      box.innerHTML =
+        '<div class="my-channel-card empty">' +
+          '<div class="mc-title">我拥有的通道</div>' +
+          '<div class="mc-hint">当前账号还没和分配表里的姓名对上，' +
+          '请联系管理员补充映射</div>' +
+        '</div>';
+    } else {
+      const main = (m.items || []).filter((x) => x.owner === m.realname);
+      const shared = (m.items || []).filter((x) => x.owner !== m.realname);
+      const chip = (x, isShared) =>
+        '<span class="ch-chip' + (isShared ? " shared" : "") + '"' +
+        ' title="' + esc(x.machine + " · " + (x.status || "")) + '">' +
+        esc(x.code) + "</span>";
+      box.innerHTML =
+        '<div class="my-channel-card">' +
+          '<div class="mc-head">' +
+            '<span class="mc-title">我拥有的通道</span>' +
+            '<span class="mc-name">' + esc(m.realname) + "</span>" +
+            '<span class="mc-count">主责 ' + main.length + " 个" +
+              (shared.length ? " · 共享 " + shared.length + " 个" : "") + "</span>" +
+          "</div>" +
+          '<div class="mc-groups">' +
+            (main.length
+              ? '<div class="mc-row"><span class="mc-label">主责</span><div class="mc-chips">' +
+                main.map((x) => chip(x, false)).join("") + "</div></div>"
+              : "") +
+            (shared.length
+              ? '<div class="mc-row"><span class="mc-label">共享</span><div class="mc-chips">' +
+                shared.map((x) => chip(x, true)).join("") + "</div></div>"
+              : "") +
+          "</div>" +
+        "</div>";
+    }
+
+    // 人员下拉（只填一次）
+    const sel = $("#assignOwner");
+    if (sel.options.length <= 1 && ASG.people) {
+      Object.keys(ASG.people).sort().forEach((name) => {
+        const o = document.createElement("option");
+        o.value = name;
+        o.textContent = name + "（" + ASG.people[name] + "）";
+        sel.appendChild(o);
+      });
+    }
+
+    const st = ASG.stats || {};
+    $("#assignStats").textContent = st.total
+      ? "共 " + st.total + " 个通道 · 良好 " + st.good + " · 未标注 " + st.unnamed +
+        " · 已分配 " + Object.keys(ASG.people || {}).length + " 人"
+      : "";
+
+    const list = $("#assignList");
+    if (!ASG.items.length) {
+      list.innerHTML = '<div class="empty"><p>没有匹配的通道</p></div>';
+      return;
+    }
+    const rows = ASG.items.map((x) =>
+      "<tr>" +
+        '<td class="nowrap muted">' + esc(x.machine || "—") + "</td>" +
+        "<td><b>" + esc(x.code) + "</b></td>" +
+        '<td class="nowrap">' + esc(x.status || "—") + "</td>" +
+        '<td class="nowrap">' + (x.owner ? esc(x.owner) : '<span class="muted">未分配</span>') + "</td>" +
+        '<td class="nowrap muted">' + esc(x.sharer || "") + "</td>" +
+      "</tr>").join("");
+    list.innerHTML =
+      '<div class="table-wrap"><table class="table">' +
+        "<thead><tr><th>设备</th><th>通道</th><th>状态</th><th>使用人</th><th>共享人</th></tr></thead>" +
+        "<tbody>" + rows + "</tbody></table></div>";
+  }
+
   /* ---------------------------------------------------------- 药品台账 */
 
   const DRUG = { items: [], q: "", category: "", loaded: false };
 
   function switchExpSub(name) {
-    const isExp = name !== "drug";
-    $$("#expSubTabs button").forEach((b) => b.classList.toggle("active", b.dataset.sub === (isExp ? "exp" : "drug")));
-    $("#subExp").hidden = !isExp;
-    $("#subDrug").hidden = isExp;
-    if (!isExp) loadDrugs();
+    const sub = name || "exp";
+    $$("#expSubTabs button").forEach((b) =>
+      b.classList.toggle("active", b.dataset.sub === sub));
+    $("#subExp").hidden = sub !== "exp";
+    $("#subDrug").hidden = sub !== "drug";
+    $("#subAssign").hidden = sub !== "assign";
+    if (sub === "drug") loadDrugs();
+    if (sub === "assign") loadAssign();
   }
 
   async function loadDrugs(force) {
@@ -2691,6 +2788,19 @@
     $$("#expSubTabs button").forEach((b) => {
       b.onclick = () => switchExpSub(b.dataset.sub);
     });
+    let assignTimer = null;
+    $("#assignSearch").oninput = () => {
+      clearTimeout(assignTimer);
+      assignTimer = setTimeout(() => {
+        ASG.q = $("#assignSearch").value.trim();
+        loadAssign(true);
+      }, 260);
+    };
+    $("#assignOwner").onchange = () => {
+      ASG.owner = $("#assignOwner").value;
+      loadAssign(true);
+    };
+
     let drugTimer = null;
     $("#drugSearch").oninput = () => {
       clearTimeout(drugTimer);

@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="battery技术">
-<link rel="stylesheet" href="/style.css?v=67">
+<link rel="stylesheet" href="/style.css?v=68">
 </head>
 <body>
 
@@ -280,6 +280,7 @@
     <div class="sub-tabs" id="expSubTabs">
       <button data-sub="exp" class="active">报账</button>
       <button data-sub="drug">药品</button>
+      <button data-sub="assign">通道分配</button>
     </div>
 
     <div id="subExp">
@@ -316,6 +317,19 @@
       </div>
       <div id="drugList"></div>
     </div>
+
+    <div id="subAssign" hidden>
+      <div id="myAssign"></div>
+      <div class="toolbar">
+        <input id="assignSearch" class="input search" placeholder="搜索通道序号 / 设备 / 人名">
+        <select id="assignOwner" class="input" style="width:150px">
+          <option value="">全部人员</option>
+        </select>
+        <div class="spacer"></div>
+        <span id="assignStats" class="muted"></span>
+      </div>
+      <div id="assignList"></div>
+    </div>
   </section>
 
 </main>
@@ -335,7 +349,7 @@
 
 <datalist id="batteryCodes"></datalist>
 
-<script src="/app.js?v=67"></script>
+<script src="/app.js?v=68"></script>
 <script>
 // 注册 Service Worker：让页面能「安装」成独立窗口的 App（PWA）
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {

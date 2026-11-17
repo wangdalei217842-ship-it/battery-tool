@@ -1698,3 +1698,59 @@ select.input { cursor: pointer; }
   .form-row textarea,
   .cp-name-input { font-size: 16px; }
 }
+
+/* 通道分配：我拥有的通道 */
+.my-channel-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  background: linear-gradient(180deg, #f8fbff 0%, #fff 100%);
+}
+.my-channel-card.empty { background: var(--bg-2, #f6f8fb); }
+.mc-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.mc-title { font-size: 14px; font-weight: 600; color: var(--ink); }
+.mc-name {
+  font-size: 13px;
+  color: var(--accent, #2563eb);
+  background: rgba(37, 99, 235, .08);
+  padding: 1px 8px;
+  border-radius: 5px;
+}
+.mc-count { font-size: 12.5px; color: var(--muted); margin-left: auto; }
+.mc-hint { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.mc-groups { display: flex; flex-direction: column; gap: 8px; }
+.mc-row { display: flex; align-items: flex-start; gap: 10px; }
+.mc-label {
+  font-size: 12px;
+  color: var(--muted);
+  flex: none;
+  padding-top: 3px;
+  width: 30px;
+}
+.mc-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ch-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  background: rgba(37, 99, 235, .09);
+  color: #1d4ed8;
+  cursor: default;
+}
+.ch-chip.shared {
+  background: rgba(100, 116, 139, .10);
+  color: #475569;
+}
+@media (max-width: 640px) {
+  .my-channel-card { padding: 12px; }
+  .mc-count { margin-left: 0; width: 100%; }
+  .ch-chip { font-size: 14px; padding: 3px 9px; }
+}
