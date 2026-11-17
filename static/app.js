@@ -1999,7 +1999,7 @@
       const groupByMachine = (arr) => {
         const map = {};
         arr.forEach((x) => {
-          const k = x.machine || "未标注设备";
+          const k = (x.machine || "未标注设备").replace(/\s+/g, " ").trim();
           (map[k] = map[k] || []).push(x);
         });
         return Object.keys(map).map((k) =>
@@ -2054,7 +2054,7 @@
     }
     const rows = ASG.items.map((x) =>
       "<tr>" +
-        '<td class="nowrap muted">' + esc(x.machine || "—") + "</td>" +
+        '<td class="nowrap muted">' + esc((x.machine || "—").replace(/\s+/g, " ").trim()) + "</td>" +
         "<td><b>" + esc(x.code) + "</b></td>" +
         '<td class="nowrap">' + esc(x.status || "—") + "</td>" +
         '<td class="nowrap">' + (x.owner ? esc(x.owner) : '<span class="muted">未分配</span>') + "</td>" +
