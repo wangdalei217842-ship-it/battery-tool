@@ -1138,6 +1138,19 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/assign/mine" and method == "GET":
             self._json(200, assign.mine(me.get("username") or ""))
             return
+        if path == "/api/assign/file" and method == "GET":
+            full = os.path.join(assign.ROOT, "data", "uploads", "channel-assign.xlsx")
+            if not os.path.isfile(full):
+                raise ApiError("原表还没上传", 404)
+            with open(full, "rb") as fh:
+                data = fh.read()
+            self._send(200, data,
+                       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                       {"Content-Disposition":
+                        "attachment; filename*=UTF-8''%s" % quote("通道分配表.xlsx")},
+                       cache="private, max-age=600")
+            return
+
         if path == "/api/assign/names" and method == "GET":
             self._json(200, {"names": assign.all_names()})
             return
