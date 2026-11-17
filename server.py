@@ -21,6 +21,7 @@ import accounts
 import methods
 import expenses
 import lab
+import assign
 import tests
 import ndax
 
@@ -682,6 +683,9 @@ class Handler(BaseHTTPRequestHandler):
             if path.startswith("/api/drugs"):
                 self._api_drugs(sess, path, method)
                 return
+            if path.startswith("/api/assign"):
+                self._api_assign(sess, path, method)
+                return
 
             # ---------- 业务：绑定「当前正在看的那个人」的库 ----------
             self._open_user_db(self._acting_uid(sess) or sess["user_id"])
@@ -1122,6 +1126,24 @@ class Handler(BaseHTTPRequestHandler):
 
 
 
+
+    def _api_assign(self, sess, path, method):
+        """通道分配表：登录用户都能看，导入要管理员。"""
+        me = sess["user"]
+        if path == "/api/assign" and method == "GET":
+            data = assign.list_assign(self.query.get("q", ""), self.query.get("owner", ""))
+            data["stats"] = assign.stats()
+            self._json(200, data)
+            return
+        if path == "/api/assign/mine" and method == "GET":
+            self._json(200, assign.mine(me.get("username") or ""))
+            return
+        if path == "/api/assign/names" and method == "GET":
+            self._json(200, {"names": assign.all_names()})
+            return
+
+        raise ApiError("接口不存在：%s %s" % (method, path), 404)
+
     def _api_drugs(self, sess, path, method):
         """药品台账：同为内测/管理员可见。"""
         me = sess["user"]
@@ -1519,6 +1541,7 @@ def main():
     methods.init_db()
     expenses.init_db()
     lab.init_db()
+    assign.init_db()
     created = accounts.ensure_admin()
     if created:
         uname, upwd = created
